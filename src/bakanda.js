@@ -7,12 +7,12 @@ const logger = require("./logger");
 const projectionEmitter = new EventEmitter();
 const registry = require("./registry");
 
-function bakanda({ namespace }) {
+function bakanda({ eventlogPath, namespace }) {
   const log = logger({ namespace });
   const packageJson = require("../package.json");
   log("%s %s", packageJson.name, packageJson.version);
 
-  const { add, consume } = eventlog();
+  const { add, consume } = eventlog({ filename: eventlogPath });
 
   const { reg } = dataflow({
     add,
