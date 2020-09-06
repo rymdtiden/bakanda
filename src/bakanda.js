@@ -1,5 +1,7 @@
+const Deferred = require("./deferred");
 const EventEmitter = require("events");
 const eventlog = require("@rymdtiden/eventlog");
+const events = new EventEmitter();
 const { CustomError } = require("./errors");
 const dataflow = require("./dataflow");
 const gql = require("./gql");
@@ -14,21 +16,29 @@ function bakanda({ eventlogPath, namespace }) {
 
   const { add, consume } = eventlog({ filename: eventlogPath });
 
+  const historyLoaded = new Deferred();
+  const onSync = () => {
+    // A bit silly that this happens on every sync.
+    // Could probably be optimized so it would only resolve once.
+    historyLoaded.resolve();
+  };
+
   const { reg } = dataflow({
     add,
     consume,
     log,
-    projectionEmitter
+    projectionEmitter,
+    onSync
   });
   const { middleware } = gql({ log, reg });
 
   return {
+    addEvent: add,
+    historyLoaded: historyLoaded.promise,
     middleware,
     reg
   };
 }
-
-module.exports = bakanda;
 
 module.exports = bakanda;
 module.exports.__proto__ = {

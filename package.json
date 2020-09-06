@@ -17,7 +17,7 @@
     "apollo-server-express": "^2.10.1",
     "base62": "^2.0.1",
     "debug": "^4.1.1",
-    "@rymdtiden/eventlog": "^0.1.0",
+    "@rymdtiden/eventlog": "^0.2.1",
     "graphql": "^14.6.0",
     "graphql-tools": "^4.0.7",
     "jsonwebtoken": "^8.5.1",

@@ -2,7 +2,7 @@ const EventEmitter = require("events");
 const registry = require("./registry");
 const utils = require("./utils");
 
-function dataflow({ add, consume, log, projectionEmitter }) {
+function dataflow({ add, consume, log, onSync, projectionEmitter }) {
   let state = {};
 
   const reg = registry({
@@ -72,35 +72,38 @@ function dataflow({ add, consume, log, projectionEmitter }) {
     }
   });
 
-  consume((event, meta) =>
-    (log => {
-      const { validators, projectors } = reg.scope({ log });
-      return Promise.resolve(log("Event from consumer: %O %o", event, meta))
-        .then(() => {
-          if (typeof validators[event.type] !== "undefined") {
-            return validators[event.type](event, { ...utils, meta });
-          }
-        })
-        .then(() => {
-          log("Event validated.");
-          if (typeof projectors[event.type] === "undefined") {
-            log("No projector for event type %s", event.type);
-            return;
-          }
-          return projectors[event.type](event, { ...utils, meta })
-            .then(
-              () => projectionEmitter && projectionEmitter.emit(meta.id, null)
-            )
-            .catch(err => {
-              log("Error during projection. %O", err);
-              projectionEmitter.emit(meta.id, err);
-            });
-        })
-        .catch(err => {
-          log("Did not validate. %O", err);
-          projectionEmitter.emit(meta.id, err);
-        });
-    })(log.extend(`(event)${meta.pos}`))
+  consume(
+    (event, meta) =>
+      (log => {
+        const { validators, projectors } = reg.scope({ log });
+        return Promise.resolve(log("Event from consumer: %O %o", event, meta))
+          .then(() => {
+            if (typeof validators[event.type] !== "undefined") {
+              return validators[event.type](event, { ...utils, meta });
+            }
+          })
+          .then(() => {
+            log("Event validated.");
+            if (typeof projectors[event.type] === "undefined") {
+              log("No projector for event type %s", event.type);
+              return;
+            }
+            return projectors[event.type](event, { ...utils, meta })
+              .then(
+                () => projectionEmitter && projectionEmitter.emit(meta.id, null)
+              )
+              .catch(err => {
+                log("Error during projection. %O", err);
+                projectionEmitter.emit(meta.id, err);
+              });
+          })
+          .catch(err => {
+            log("Did not validate. %O", err);
+            projectionEmitter.emit(meta.id, err);
+          });
+      })(log.extend(`(event)${meta.pos}`)),
+    0,
+    onSync
   );
 
   return { reg };

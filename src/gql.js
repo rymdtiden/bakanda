@@ -31,6 +31,10 @@ module.exports = ({ log, reg }) => {
             }
           })()
         ).then(session => {
+          // TODO: Tests to be written: Not logged in requests from graphql should
+          // have an empty object as session. But when calling registry functions
+          // from within the codebase, session should be undefined.
+
           return {
             req,
             res,
@@ -40,6 +44,7 @@ module.exports = ({ log, reg }) => {
             session: typeof session === "object" ? session : {}
           };
         });
+
       },
       schema: makeExecutableSchema({
         resolvers: {
