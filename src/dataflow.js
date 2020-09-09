@@ -26,14 +26,23 @@ function dataflow({ add, consume, log, onSync, projectionEmitter }) {
                     ...deps,
                     state,
                     addEvent: event => {
-                      const promise = new Promise((resolve, reject) => {
-                        const { id } = add(event);
-                        projectionEmitter.once(id, err =>
-                          err ? reject(err) : resolve()
-                        );
-                      });
-                      events.push(promise);
-                      return promise;
+                      return Promise.resolve()
+                        .then(() => {
+                          const { validators } = reg.scope({ log });
+                          if (typeof validators[event.type] !== "undefined") {
+                            return validators[event.type](event, utils);
+                          }
+                        })
+                        .then(() => {
+                          const promise = new Promise((resolve, reject) => {
+                            const { id } = add(event);
+                            projectionEmitter.once(id, err =>
+                              err ? reject(err) : resolve()
+                            );
+                          });
+                          events.push(promise);
+                          return promise;
+                        });
                     }
                   })
                 )
