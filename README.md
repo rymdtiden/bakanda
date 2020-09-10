@@ -54,3 +54,19 @@ For event validators and event projectors only:
 
 ###
 
+
+## Todo
+
+* Always pass along the logged in user in all events, so the user can be used
+  in validators and projectors. (In event meta?)
+* More automated way to identify function roles (validators, commands,
+  projectors, queries) through the function names. Connect event types to
+  validators and projectors by function names.
+* More automated way to tie formatters to graphql data types.
+* Generic user features built in to bakanda.
+* Error classes in registry? Or automated creation of error classes by proxies?
+* Streaming CSV data storage to disk, with helpers for filtering, etc.
+* Generic queryfunctions, just mapping some part of the state to a type (and
+  then to a formatter connected to the type). Checking parameter names
+  would make it possible to map id parameters to id values of items in an
+  array in state.
