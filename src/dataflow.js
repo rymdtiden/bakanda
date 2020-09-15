@@ -2,8 +2,8 @@ const EventEmitter = require("events");
 const registry = require("./registry");
 const utils = require("./utils");
 
-function dataflow({ add, consume, log, onSync, projectionEmitter }) {
-  let state = {};
+function dataflow({ add, consume, initialState, log, onSync, projectionEmitter }) {
+  let state = initialState || {};
 
   const reg = registry({
     categories: ["commands", "queries", "validators", "projectors"],
@@ -46,12 +46,12 @@ function dataflow({ add, consume, log, onSync, projectionEmitter }) {
                     }
                   })
                 )
-                  .then(result =>
+                  .then((result) =>
                     events.length > 0
                       ? Promise.all(events).then(() => result)
                       : result
                   )
-                  .then(result =>
+                  .then((result) =>
                     typeof result === "function" ? result() : result
                   );
               } else if (category === "queries") {
@@ -64,7 +64,7 @@ function dataflow({ add, consume, log, onSync, projectionEmitter }) {
                   log("New state: %O", state);
                   return newState;
                 } else {
-                  return newState.then(newState => {
+                  return newState.then((newState) => {
                     state = newState;
                     log("New state: %O", state);
                   });
@@ -78,7 +78,7 @@ function dataflow({ add, consume, log, onSync, projectionEmitter }) {
           return Promise.reject(err);
         }
       };
-    }
+    },
   });
 
   consume(
@@ -115,7 +115,9 @@ function dataflow({ add, consume, log, onSync, projectionEmitter }) {
     onSync
   );
 
-  return { reg };
+  const timeout = (fn, ms) => setTimeout(() => fn({ reg, state }), ms);
+
+  return { reg, timeout };
 }
 
 module.exports = dataflow;
