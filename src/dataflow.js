@@ -2,8 +2,8 @@ const EventEmitter = require("events");
 const registry = require("./registry");
 const utils = require("./utils");
 
-function dataflow({ add, consume, log, projectionEmitter }) {
-  let state = {};
+function dataflow({ add, consume, initialState, log, projectionEmitter }) {
+  let state = initialState || {};
 
   const reg = registry({
     categories: ["commands", "queries", "validators", "projectors"],
@@ -25,24 +25,24 @@ function dataflow({ add, consume, log, projectionEmitter }) {
                   fn(args, {
                     ...deps,
                     state,
-                    addEvent: event => {
+                    addEvent: (event) => {
                       const promise = new Promise((resolve, reject) => {
                         const { id } = add(event);
-                        projectionEmitter.once(id, err =>
+                        projectionEmitter.once(id, (err) =>
                           err ? reject(err) : resolve()
                         );
                       });
                       events.push(promise);
                       return promise;
-                    }
+                    },
                   })
                 )
-                  .then(result =>
+                  .then((result) =>
                     events.length > 0
                       ? Promise.all(events).then(() => result)
                       : result
                   )
-                  .then(result =>
+                  .then((result) =>
                     typeof result === "function" ? result() : result
                   );
               } else if (category === "queries") {
@@ -55,7 +55,7 @@ function dataflow({ add, consume, log, projectionEmitter }) {
                   log("New state: %O", state);
                   return newState;
                 } else {
-                  return newState.then(newState => {
+                  return newState.then((newState) => {
                     state = newState;
                     log("New state: %O", state);
                   });
@@ -69,11 +69,11 @@ function dataflow({ add, consume, log, projectionEmitter }) {
           return Promise.reject(err);
         }
       };
-    }
+    },
   });
 
   consume((event, meta) =>
-    (log => {
+    ((log) => {
       const { validators, projectors } = reg.scope({ log });
       return Promise.resolve(log("Event from consumer: %O %o", event, meta))
         .then(() => {
@@ -91,19 +91,21 @@ function dataflow({ add, consume, log, projectionEmitter }) {
             .then(
               () => projectionEmitter && projectionEmitter.emit(meta.id, null)
             )
-            .catch(err => {
+            .catch((err) => {
               log("Error during projection. %O", err);
               projectionEmitter.emit(meta.id, err);
             });
         })
-        .catch(err => {
+        .catch((err) => {
           log("Did not validate. %O", err);
           projectionEmitter.emit(meta.id, err);
         });
     })(log.extend(`(event)${meta.pos}`))
   );
 
-  return { reg };
+  const timeout = (fn, ms) => setTimeout(() => fn({ reg, state }), ms);
+
+  return { reg, timeout };
 }
 
 module.exports = dataflow;
