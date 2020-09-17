@@ -2,7 +2,14 @@ const EventEmitter = require("events");
 const registry = require("./registry");
 const utils = require("./utils");
 
-function dataflow({ add, consume, initialState, log, onSync, projectionEmitter }) {
+function dataflow({
+  add,
+  consume,
+  initialState,
+  log,
+  onSync,
+  projectionEmitter,
+}) {
   let state = initialState || {};
 
   const reg = registry({
@@ -25,7 +32,7 @@ function dataflow({ add, consume, initialState, log, onSync, projectionEmitter }
                   fn(args, {
                     ...deps,
                     state,
-                    addEvent: event => {
+                    addEvent: (event) => {
                       return Promise.resolve()
                         .then(() => {
                           const { validators } = reg.scope({ log });
@@ -36,14 +43,14 @@ function dataflow({ add, consume, initialState, log, onSync, projectionEmitter }
                         .then(() => {
                           const promise = new Promise((resolve, reject) => {
                             const { id } = add(event);
-                            projectionEmitter.once(id, err =>
+                            projectionEmitter.once(id, (err) =>
                               err ? reject(err) : resolve()
                             );
                           });
                           events.push(promise);
                           return promise;
                         });
-                    }
+                    },
                   })
                 )
                   .then((result) =>
@@ -83,7 +90,7 @@ function dataflow({ add, consume, initialState, log, onSync, projectionEmitter }
 
   consume(
     (event, meta) =>
-      (log => {
+      ((log) => {
         const { validators, projectors } = reg.scope({ log });
         return Promise.resolve(log("Event from consumer: %O %o", event, meta))
           .then(() => {
@@ -101,12 +108,12 @@ function dataflow({ add, consume, initialState, log, onSync, projectionEmitter }
               .then(
                 () => projectionEmitter && projectionEmitter.emit(meta.id, null)
               )
-              .catch(err => {
+              .catch((err) => {
                 log("Error during projection. %O", err);
                 projectionEmitter.emit(meta.id, err);
               });
           })
-          .catch(err => {
+          .catch((err) => {
             log("Did not validate. %O", err);
             projectionEmitter.emit(meta.id, err);
           });

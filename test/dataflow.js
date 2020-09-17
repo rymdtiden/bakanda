@@ -55,7 +55,6 @@ describe("dataflow.js", () => {
     });
 
     reg.projectors["UserRegistered"] = (event, { meta, state }) => {
-      console.log(state);
       return {
         users: [
           ...(state.users || []),
@@ -85,8 +84,9 @@ describe("dataflow.js", () => {
     };
 
     reg.commands.registerUser = (args, { addEvent, reg }) => {
-      addEvent({ id: generateId(), ...args });
-      return () => reg.queries.userByEmail({ email: "johndoe@example.org" });
+      return addEvent({ id: generateId(), ...args }).then(() =>
+        reg.queries.userByEmail({ email: "johndoe@example.org" })
+      );
     };
 
     return reg.commands
@@ -96,7 +96,6 @@ describe("dataflow.js", () => {
         fullName: "John Doe",
       })
       .then((user) => {
-        process.exit(0);
         expect(user.fullName).to.equal("John Doe");
       })
       .then(() => {
