@@ -28,14 +28,14 @@ const [jwtPublicKey, jwtPrivateKey] = (() => {
       modulusLength: 1024,
       publicKeyEncoding: {
         type: "spki",
-        format: "pem"
+        format: "pem",
       },
       privateKeyEncoding: {
         type: "pkcs8",
         format: "pem",
         cipher: "aes-256-cbc",
-        passphrase: process.env.JWTSECRET || defaultJwtSecret
-      }
+        passphrase: process.env.JWTSECRET || defaultJwtSecret,
+      },
     });
     fs.writeFileSync(jwtSecretsFile, JSON.stringify({ publicKey, privateKey }));
     return [publicKey, privateKey];
@@ -102,11 +102,11 @@ function createToken(data) {
     data,
     {
       key: jwtPrivateKey,
-      passphrase: process.env.JWTSECRET || defaultJwtSecret
+      passphrase: process.env.JWTSECRET || defaultJwtSecret,
     },
     {
       algorithm: "RS256",
-      expiresIn: "336h"
+      expiresIn: "336h",
     }
   );
   return token;
@@ -117,17 +117,17 @@ function parseToken(token) {
   if (!token) return Promise.reject(new SessionTokenError());
   return new Promise((resolve, reject) => {
     jwt.verify(
-      token,
+      token.replace(/^Bearer /, "").trim(),
       jwtPublicKey,
       {
-        algorithms: ["RS256"]
+        algorithms: ["RS256"],
       },
       (err, decoded) => {
         if (err) return reject(err);
         resolve(decoded);
       }
     );
-  }).catch(err => {
+  }).catch((err) => {
     throw new SessionTokenError();
   });
 }
@@ -138,5 +138,5 @@ module.exports = {
   parseToken,
   passhasher,
   passhasherSync,
-  validatePasshash
+  validatePasshash,
 };
