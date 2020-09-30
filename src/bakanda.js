@@ -9,7 +9,7 @@ const logger = require("./logger");
 const projectionEmitter = new EventEmitter();
 const registry = require("./registry");
 
-function bakanda({ eventlogPath, namespace }) {
+function bakanda({ eventlogPath, namespace, initialState }) {
   const log = logger({ namespace });
   const packageJson = require("../package.json");
   log("%s %s", packageJson.name, packageJson.version);
@@ -28,7 +28,8 @@ function bakanda({ eventlogPath, namespace }) {
     consume,
     log,
     projectionEmitter,
-    onSync
+    onSync,
+    initialState,
   });
   const { middleware } = gql({ log, reg });
 
@@ -36,7 +37,7 @@ function bakanda({ eventlogPath, namespace }) {
     addEvent: add,
     historyLoaded: historyLoaded.promise,
     middleware,
-    reg
+    reg,
   };
 }
 
@@ -44,5 +45,5 @@ module.exports = bakanda;
 module.exports.__proto__ = {
   ...require("./testtools"),
   ...require("./utils"),
-  CustomError
+  CustomError,
 };
